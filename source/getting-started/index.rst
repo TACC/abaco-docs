@@ -169,6 +169,10 @@ Suppose we want to write a Python function that counts words in a string. We mig
 In order to process a message sent to an actor actor, we use the ``raw_image`` attribute of the ``context`` dictionary.
 We can access it by using the ``get_context`` method from the ``actors`` module in ``agavepy``.
 
+For this example, create a new local directory to hold your work. Then, create a new file in this directory called ``example.py``. Add the following to this file:
+
+
+
 .. code-block:: bash
 
   # example.py
@@ -195,8 +199,10 @@ We can build a Docker image from a text file called a Dockerfile. You can think 
 creating images. The instructions within a Dockerfile either add files/folders to the image, add metadata to the
 image, or both.
 
+
 The FROM instruction
 ~~~~~~~~~~~~~~~~~~~~
+Create a new file called ``Dockerfile`` in the same directory as your ``example.py`` file.
 
 We can use the ``FROM`` instruction to start our new image from a known image. This should be the first line of our
 Dockerfile. We will start an official Python image:
@@ -208,7 +214,7 @@ Dockerfile. We will start an official Python image:
 The ADD instruction
 ~~~~~~~~~~~~~~~~~~~
 
-We can add local files to our image using the ``ADD`` instruction. We can add a the file ``example.py`` in our local directory to the ``Users/kwhitley/PycharmProjects/Test`` directory in our container with the following instruction:
+We can add local files to our image using the ``ADD`` instruction. To add the ``example.py`` file from our local directory, we use the following instruction:
 
 .. code-block:: bash
 
