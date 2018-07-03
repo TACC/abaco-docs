@@ -29,7 +29,7 @@ their descriptions.
 |                     | messages in parallel. The default value is False.                                |
 +---------------------+----------------------------------------------------------------------------------+
 | privileged          | (True/False) - Whether the actor runs in privileged mode and has access to       |
-|                     | the Docker daemon. *Note: Setting this parameter to True requires elevated       |
+|                     | the Docker daemon. *Note*: Setting this parameter to True requires elevated      |
 |                     | permissions.                                                                     |
 +---------------------+----------------------------------------------------------------------------------+
 | use_container_uid   | Run the actor using the UID/GID set in the Docker image. *Note*: Setting         |
