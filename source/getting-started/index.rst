@@ -6,7 +6,7 @@ Getting Started
 ===============
 
 This Getting Started guide will walk you through the initial steps of setting up the necessary accounts and installing
-required software before moving to the Abaco Quickstart where you will create and execute your first Abaco actor. If
+the required software before moving to the Abaco Quickstart, where you will create and execute your first Abaco actor. If
 you are already using Docker Hub and the TACC Cloud APIs, feel free to jump right to the `Abaco Quickstart`_.
 
 
@@ -29,7 +29,7 @@ Create a Docker account
 
 `Docker <https://www.docker.com/>`__  is an open-source container runtime providing operating-system-level
 virtualization. Abaco pulls images for its actors from the public Docker Hub. To register actors
-you will need to publish images on Docker Hub, which requires a docker account `Click Here <https://hub.docker.com/>`__ .
+you will need to publish images on Docker Hub, which requires a `Docker account <https://hub.docker.com/>`__ .
 
 
 Install the TACC Cloud Python SDK
@@ -72,7 +72,7 @@ a Python shell:
   ...            password='your password')
 
 Once the object is instantiated, interact with it according to the API documentation and your specific usage needs.
-For example, to create a new OAuth client we type the following :
+For example, to create a new OAuth client we type the following:
 
 .. code-block:: bash
 
@@ -169,6 +169,10 @@ Suppose we want to write a Python function that counts words in a string. We mig
 In order to process a message sent to an actor actor, we use the ``raw_image`` attribute of the ``context`` dictionary.
 We can access it by using the ``get_context`` method from the ``actors`` module in ``agavepy``.
 
+For this example, create a new local directory to hold your work. Then, create a new file in this directory called ``example.py``. Add the following to this file:
+
+
+
 .. code-block:: bash
 
   # example.py
@@ -192,14 +196,16 @@ To register this function as an Abaco actor, we create a docker image that conta
 execute it as part of the default command.
 
 We can build a Docker image from a text file called a Dockerfile. You can think of a Dockerfile as a recipe for
-creating images. The instructions within a Dockerfile either add files/folders to the images, add metadata to the
+creating images. The instructions within a Dockerfile either add files/folders to the image, add metadata to the
 image, or both.
+
 
 The FROM instruction
 ~~~~~~~~~~~~~~~~~~~~
+Create a new file called ``Dockerfile`` in the same directory as your ``example.py`` file.
 
-we can use the ``FROM`` instruction to start our new image from a known image. This should be the first line of our
-Dockerfile. We will start an official Python image"
+We can use the ``FROM`` instruction to start our new image from a known image. This should be the first line of our
+Dockerfile. We will start an official Python image:
 
 .. code-block:: bash
 
@@ -208,14 +214,14 @@ Dockerfile. We will start an official Python image"
 The ADD instruction
 ~~~~~~~~~~~~~~~~~~~
 
-We can add local files to our image using the ``ADD`` instruction. We can add a the file ``example.py`` in our local directory to the ``Users/kwhitley/PycharmProjects/Test`` directory in our container with the following instruction:
+We can add local files to our image using the ``ADD`` instruction. To add the ``example.py`` file from our local directory, we use the following instruction:
 
 .. code-block:: bash
 
   ADD example.py /example.py
 
 
-The last step is write the command from running the application, which is simply - ``python /example.py``. We use
+The last step is to write the command from running the application, which is simply ``python /example.py``. We use
 the ``CMD`` instruction to do that:
 
 .. code-block:: bash
@@ -233,7 +239,7 @@ With that, our ``Dockerfile`` is now ready. This is what is looks like:
   CMD ["python", "/example.py"]
 
 
-Now that we have our ``Dockerfile``, we can build our image and push it to Docker Hub. To do so we use the
+Now that we have our ``Dockerfile``, we can build our image and push it to Docker Hub. To do so, we use the
 ``docker build`` and ``docker push`` commands:
 
 .. code-block:: bash
@@ -244,7 +250,7 @@ Now that we have our ``Dockerfile``, we can build our image and push it to Docke
 Registering an Actor
 ^^^^^^^^^^^^^^^^^^^^
 
-Now we are going to register the Docker image we just built as an Abaco actor. To do this we will use the ``Agave``
+Now we are going to register the Docker image we just built as an Abaco actor. To do this, we will use the ``Agave``
 client object we created above (see `Working with TACC OAuth`_).
 
 To register an actor using the agavepy library, we use the ``actors.add()`` method and pass the arguments describing
@@ -258,67 +264,30 @@ the actor we want to register through the `body` parameter. For example:
   >>> ag.actors.add(body=my_actor)
   
 
+To get the message from Abaco, do the following:
+
+.. code-block:: bash
+
+  >>> from agavepy.actors import get_contex
+      def string_count():
+          context = get_context()
+          try:
+              message = context['raw_message']
+      except Exception as e:
+              print("Got an exception parsing message. Aborting. Exception: {}".format(e))
+        words = message = "Hey my name is john"
+        words = message.split(' ')
+        word_count = len(words)
+        print('Number of words is: ' + str(word_count))
+     string_count()
+
 Executing an Actor
 ^^^^^^^^^^^^^^^^^^
 
 We are now ready to execute our actor by sending it a message.
 
-To execute a Docker container associated with a reactor, we send the reactor a message by makeing a **POST** request to the reactors' inbox URL which is in the form of:
-
-.. code-block:: bash
-
- http://api.tacc.utexas.edu/reactors/v2/<reactor_id>/messages
- 
-Currently, two types of messages are supported: "raw" string and JSON messages.
-
-Executing Reactors with Raw Strings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To excute a reactor passing a raw string, make a **POST** request with a single argument in the message body of `message`.
-Here is an example using curl:
-
-.. code-block:: bash
-
-   $ curl -H "Authorization: Bearer $TOKEN" -d "message=some test message" https://api.tacc.cloud/actors/v2/$REACTOR_ID/messages
-   
-When this request is successful, the reactors service will put a single message on the reactors' message queue which will ultimately result in one container execution with the `$MSG` enviroment variable haiving the value `some test message`.
-
-The same execution could be made using the Python library like so:
-
-.. code-block:: bash
-
-  >>> ag.actors.sendMessage(actorId='your actor Id', body={'message': 'a sentence you want to send to the function'})
-
 
 Retrieving the Logs
 ^^^^^^^^^^^^^^^^^^^
-
-One can also retrieve data about a reactor's executions and the logs generated by the execution. Logs are anything written to standard out during the container execution. Note that logs are purged from the database on a regular interval (usually 24 hours) so be sure to retrieve important log data in a timely fashion.
-
-The equivalent request in Python look like:
-
-.. code-block:: bash
-
-  >>> ag.actors.getExecutionLogs(actorId= aid, executionId = exid)
-  
-Here is an example response:
-
-.. code-block:: bash
-
-   {
-  "message": "Logs retrieved successfully.",
-  "result": {
-    "_links": {
-      "execution": "https://api.sd2e.org/actors/v2/NolBaJ5y6714M/executions/ZgeLeGGQDaZjj",
-      "owner": "https://api.sd2e.org/profiles/v2/jstubbs",
-      "self": "https://api.sd2e.org/actors/v2/NolBaJ5y6714M/executions/ZgeLeGGQDaZjj/logs"
-    },
-    "logs": "Contents of MSG: {'application_id': 'print-env-cli-DggdGbK-0.1.0', 'username': 'jdoe'}\nEnvironment:\nHOSTNAME=ba45cf7c68d5\nSHLVL=1\nHOME=/root\n_abaco_actor_id=NolBaJ5y6714M\n_abaco_access_token=9562ff7763cb6a21a0851f5e19bea67\n_abaco_api_server=https://api.sd2e.org\n_abaco_actor_dbid=SD2E_NolBaJ5y6714M\nMSG={'application_id': 'print-env-cli-DggdGbK-0.1.0', 'username': 'jdoe'}\n_abaco_execution_id=ZgeLeGGQDaZjj\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\nkey1=value1\n_abaco_Content_Type=application/json\nkey2=value2\nPWD=/\n_abaco_jwt_header_name=X-Jwt-Assertion-Sd2E\n_abaco_username=jstubbs\n_abaco_actor_state={}\nContents of root file system: \nbin\ndev\netc\nhome\nproc\nroot\nsys\ntest.sh\ntmp\nusr\nvar\nChecking for contents of mounts:\nMount does not exist\n"
-  },
-  "status": "success",
-  "version": ":dev"
-  }
-
-
 
 Let's retrieve the logs from the execution we just made.
