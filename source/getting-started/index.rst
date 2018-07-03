@@ -257,6 +257,7 @@ the actor we want to register through the `body` parameter. For example:
   >>> my_actor = {"image": "user/my_actor", "name": "test", "description": "Actor that counts words."} }
   >>> ag.actors.add(body=my_actor)
   
+
 To get the message from Abaco, do the following:
 
 .. code-block:: bash
