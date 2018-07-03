@@ -166,18 +166,17 @@ Suppose we want to write a Python function that counts words in a string. We mig
       word_count = len(words)
       print('Number of words is: ' + str(word_count))
 
-In order to process a message sent to an actor actor, we use the ``raw_image`` attribute of the ``context`` dictionary.
+In order to process a message sent to an actor actor, we use the ``raw_message`` attribute of the ``context`` dictionary.
 We can access it by using the ``get_context`` method from the ``actors`` module in ``agavepy``.
 
-For this example, create a new local directory to hold your work. Then, create a new file in this directory called ``example.py``. Add the following to this file:
-
-
+For this example, create a new local directory to hold your work. Then, create a new file in this directory called
+``example.py``. Add the following to this file:
 
 .. code-block:: bash
 
   # example.py
 
-  from agavepy.actors import get_contex
+  from agavepy.actors import get_context
 
   def string_count(message):
       words = message.split(' ')
@@ -200,8 +199,9 @@ creating images. The instructions within a Dockerfile either add files/folders t
 image, or both.
 
 
-The FROM instruction
+The FROM Instruction
 ~~~~~~~~~~~~~~~~~~~~
+
 Create a new file called ``Dockerfile`` in the same directory as your ``example.py`` file.
 
 We can use the ``FROM`` instruction to start our new image from a known image. This should be the first line of our
@@ -211,15 +211,25 @@ Dockerfile. We will start an official Python image:
 
   FROM python:3.6
 
-The ADD instruction
-~~~~~~~~~~~~~~~~~~~
+The RUN, ADD and CMD Instructions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can add local files to our image using the ``ADD`` instruction. To add the ``example.py`` file from our local directory, we use the following instruction:
+We can run arbitrary Linux commands to add files to our image. We'll run the ``pip`` command to install the ``agavepy``
+library in our image:
+
+.. code-block:: bash
+
+  RUN pip install --no-cache-dir agavepy
+
+(note: there is a ``abacosample`` image that contains Python and the agavepy library; see :ref:`samples` for more
+details)
+
+We can also add local files to our image using the ``ADD`` instruction. To add the ``example.py`` file from our local
+directory, we use the following instruction:
 
 .. code-block:: bash
 
   ADD example.py /example.py
-
 
 The last step is to write the command from running the application, which is simply ``python /example.py``. We use
 the ``CMD`` instruction to do that:
@@ -234,6 +244,7 @@ With that, our ``Dockerfile`` is now ready. This is what is looks like:
 
   FROM python:3.6
 
+  RUN pip install --no-cache-dir agavepy
   ADD example.py /example.py
 
   CMD ["python", "/example.py"]
@@ -254,40 +265,149 @@ Now we are going to register the Docker image we just built as an Abaco actor. T
 client object we created above (see `Working with TACC OAuth`_).
 
 To register an actor using the agavepy library, we use the ``actors.add()`` method and pass the arguments describing
-the actor we want to register through the `body` parameter. For example:
+the actor we want to register through the ``body`` parameter. For example:
 
 .. code-block:: bash
 
   >>> from agavepy.agave import Agave
   >>> ag = Agave(api_server='https://api.tacc.utexas.edu', token='<access_token>')
-  >>> my_actor = {"image": "user/my_actor", "name": "test", "description": "Actor that counts words."} }
+  >>> my_actor = {"image": "user/my_actor", "name": "word_counter", "description": "Actor that counts words."}
   >>> ag.actors.add(body=my_actor)
-  
 
-To get the message from Abaco, do the following:
+You should see a response like this:
 
 .. code-block:: bash
 
-  >>> from agavepy.actors import get_contex
-      def string_count():
-          context = get_context()
-          try:
-              message = context['raw_message']
-      except Exception as e:
-              print("Got an exception parsing message. Aborting. Exception: {}".format(e))
-        words = message = "Hey my name is john"
-        words = message.split(' ')
-        word_count = len(words)
-        print('Number of words is: ' + str(word_count))
-     string_count()
+    {'_links': {'executions': 'https://api.tacc.utexas.edu/actors/v2/O08Nzb3mRA7Bz/executions',
+    'owner': 'https://api.tacc.utexas.edu/profiles/v2/jstubbs',
+    'self': 'https://api.tacc.utexas.edu/actors/v2/O08Nzb3mRA7Bz'},
+    'createTime': '2018-07-03 22:41:29.563024',
+    'defaultEnvironment': {},
+    'description': 'Actor that counts words.',
+    'id': 'O08Nzb3mRA7Bz',
+    'image': 'abacosamples/wc',
+    'lastUpdateTime': '2018-07-03 22:41:29.563024',
+    'mounts': [],
+    'name': 'word_counter',
+    'owner': 'jstubbs',
+    'privileged': False,
+    'state': {},
+    'stateless': False,
+    'status': 'SUBMITTED',
+    'statusMessage': '',
+    'type': 'none',
+    'useContainerUid': False}
+
+Notes:
+
+- Abaco assigned an id to the actor (in this case ``O08Nzb3mRA7Bz``) and associated it with the image (in this case,
+  ``abacosamples/wc``) which it began pulling from the public Docker Hub.
+- Abaco returned a status of ``SUBMITTED`` for the actor; behind the scenes, Abaco is starting a worker container to
+  handle messages passed to this actor. The worker must initialize itself (download the image, etc) before the
+  actor is ready.
+- When the actor's worker is initialized, the status will change to ``READY``.
+
+At any point we can check the details of our actor, including its status, with the following:
+
+.. code-block:: bash
+
+  >>> ag.actors.get(actorId='O08Nzb3mRA7Bz')
+
+The response format is identical to that returned from the ``.add()`` method.
+
 
 Executing an Actor
 ^^^^^^^^^^^^^^^^^^
 
-We are now ready to execute our actor by sending it a message.
+We are now ready to execute our actor by sending it a message. We built our actor to process a raw message string, so
+that is what we will send, but there other options, including JSON and binary data. For more details, see the
+:ref:`messages` section.
+
+We send our actor a message using the ``sendMessage()`` method:
+
+.. code-block:: bash
+
+  >>> ag.actors.sendMessage(actorId='O08Nzb3mRA7Bz',
+                            body={'message': 'Actor, please count these words.'})
+
+Abaco queues up an execution for our actor and then responds with JSON, including an id for the execution contained in
+the ``executionId``:
+
+.. code-block:: bash
+
+    {'_links': {'messages': 'https://api.tacc.utexas.edu/actors/v2/O08Nzb3mRA7Bz/messages',
+      'owner': 'https://api.tacc.utexas.edu/profiles/v2/jstubbs',
+      'self': 'https://api.tacc.utexas.edu/actors/v2/O08Nzb3mRA7Bz/executions/kA1P1m8NkkolK'},
+     'executionId': 'kA1P1m8NkkolK',
+     'msg': 'Actor, please count these words.'}
+
+In general, an execution does not start immediately but is instead queued until a future time when a worker for the
+actor can take the message and start an actor container with the message. We can retrieve the details about an
+execution, including its status, using the ``getExecution()`` method:
+
+.. code-block:: bash
+
+  >>> ag.actors.getExecution(actorId='O08Nzb3mRA7Bz', executionId='kA1P1m8NkkolK')
+
+The response will be similar to the following:
+
+.. code-block:: bash
+
+    {'_links': {'logs': 'https://api.tacc.utexas.edu/actors/v2/TACC-PROD_O08Nzb3mRA7Bz/executions/kA1P1m8NkkolK/logs',
+      'owner': 'https://api.tacc.utexas.edu/profiles/v2/jstubbs',
+      'self': 'https://api.tacc.utexas.edu/actors/v2/TACC-PROD_O08Nzb3mRA7Bz/executions/kA1P1m8NkkolK'},
+     'actorId': 'O08Nzb3mRA7Bz',
+     'apiServer': 'https://api.tacc.utexas.edu',
+     'cpu': 0,
+     'executor': 'jstubbs',
+     'exitCode': 1,
+     'finalState': {'Dead': False,
+      'Error': '',
+      'ExitCode': 1,
+      'FinishedAt': '2018-07-03T22:56:30.605256563Z',
+      'OOMKilled': False,
+      'Paused': False,
+      'Pid': 0,
+      'Restarting': False,
+      'Running': False,
+      'StartedAt': '2018-07-03T22:56:30.474917256Z',
+      'Status': 'exited'},
+     'id': 'kA1P1m8NkkolK',
+     'io': 0,
+     'messageReceivedTime': '2018-07-03 22:56:29.075122',
+     'runtime': 1,
+     'startTime': '2018-07-03 22:56:29.558470',
+     'status': 'COMPLETE',
+     'workerId': 'e7B3JXDNxM6M0'}
+
+Note that a status of ``COMPLETE`` indicates that the execution has finished and we are ready to retrieve our results.
 
 
 Retrieving the Logs
 ^^^^^^^^^^^^^^^^^^^
 
-Let's retrieve the logs from the execution we just made.
+The Abaco system collects all standard out from an actor execution and makes it available via the ``logs`` endpoint.
+Let's retrieve the logs from the execution we just made. We use the ``getExecutionLogs()``
+method, passing out ``actorId`` and our ``executionId``:
+
+.. code-block:: bash
+
+  >>> ag.actors.getExecutionLogs(actorId='O08Nzb3mRA7Bz', executionId='kA1P1m8NkkolK')
+
+The response should be similar to the following:
+
+.. code-block:: bash
+
+    {'_links': {'execution': 'https://api.tacc.utexas.edu/actors/v2/6PlMbDLa4zlON/executions/kGQk6RRJQBL3',
+      'owner': 'https://api.tacc.utexas.edu/profiles/v2/jstubbs',
+      'self': 'https://api.tacc.utexas.edu/actors/v2/6PlMbDLa4zlON/executions/kGQk6RRJQBL3/logs'},
+     'logs': 'Number of words is: 5\n'}
+
+We see our actor output `Number of words is: 5`, which is the expected result!
+
+
+Conclusion
+^^^^^^^^^^
+
+Congratulations! At this point you have created, registered and executed your first actor, but there is a lot more you
+can do with the Abaco system. To learn more about the additional capabilities, please continue on to the Technical Guide.

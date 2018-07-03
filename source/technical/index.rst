@@ -9,4 +9,5 @@ The Technical Guide for Abaco provides a more detailed reference to Abaco's adva
 - :doc:`context`: Full details regarding the context injected into every Abaco actor.
 - :doc:`state`: Working with the State API to store state between actor executions.
 - :doc:`sharing`: Sharing actors with other users and using nonces to execute actors.
+- :doc:`api_reference`: Complete HTTP API reference.
 

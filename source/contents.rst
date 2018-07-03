@@ -23,6 +23,7 @@ Welcome to Abaco's Documentation!
    technical/messages
    technical/state
    technical/sharing
+   technical/api_reference
 
 
 .. toctree::
