@@ -166,7 +166,7 @@ Suppose we want to write a Python function that counts words in a string. We mig
       word_count = len(words)
       print('Number of words is: ' + str(word_count))
 
-In order to process a message sent to an actor actor, we use the ``raw_message`` attribute of the ``context`` dictionary.
+In order to process a message sent to an actor, we use the ``raw_message`` attribute of the ``context`` dictionary.
 We can access it by using the ``get_context`` method from the ``actors`` module in ``agavepy``.
 
 For this example, create a new local directory to hold your work. Then, create a new file in this directory called
@@ -251,7 +251,7 @@ With that, our ``Dockerfile`` is now ready. This is what is looks like:
 
 
 Now that we have our ``Dockerfile``, we can build our image and push it to Docker Hub. To do so, we use the
-``docker build`` and ``docker push`` commands:
+``docker build`` and ``docker push`` commands [note: user is your user on Docker, you must also $ docker login] :
 
 .. code-block:: bash
 
