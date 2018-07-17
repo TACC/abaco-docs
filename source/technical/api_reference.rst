@@ -28,7 +28,9 @@ The following table lists the public endpoints within the Abaco API.
 +----+------+-----+--------+---------------------------------------------+---------------------------------+
 | X  |  X   |     |        | /actors/v2/{actor_id}/permissions           | List/update actor permissions.  |
 +----+------+-----+--------+---------------------------------------------+---------------------------------+
-| X  |      |     |        | /actors/v2/{actor_id}/executions            | Retrieve execution details.     |
+| X  |      |     |        | /actors/v2/{actor_id}/executions            | List execution details.         |
++----+------+-----+--------+---------------------------------------------+---------------------------------+
+| X  |      |     |        | /actors/v2/{actor_id}/executions/{eid}      | Get execution details.          |
 +----+------+-----+--------+---------------------------------------------+---------------------------------+
 | X  |      |     |        | /actors/v2/{actor_id}/executions/{eid}/logs | Retrieve execution logs.        |
 +----+------+-----+--------+---------------------------------------------+---------------------------------+
