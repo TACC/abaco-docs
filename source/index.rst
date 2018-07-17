@@ -6,7 +6,7 @@ Welcome to Abaco
 What is Abaco
 _____________
     
-**Abaco** is an NSF-funded web service and distributed computing platform providing funcations-as-a-service (FaaS)
+**Abaco** is an NSF-funded web service and distributed computing platform providing functions-as-a-service (FaaS)
 to the research computing community. Abaco implements functions using the Actor Model of concurrent computation. In
 Abaco, each actor is associated with a Docker image, and actor containers are executed in response to messages posted
 to their inbox which itself is given by a URI exposed over HTTP.
