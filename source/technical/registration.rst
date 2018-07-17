@@ -50,7 +50,7 @@ curl
 ~~~~
 
 Here is an example using curl; note that to set the default environment, we *must* pass content type ``application/json`` and
-bde sure to pass properly formatted JSON in the payload.
+be sure to pass properly formatted JSON in the payload.
 
 .. code-block:: bash
 
