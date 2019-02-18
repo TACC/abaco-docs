@@ -105,4 +105,3 @@ Additional Work
 
 
 :reference:`state`
-``
