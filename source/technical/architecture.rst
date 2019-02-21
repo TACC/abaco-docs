@@ -4,7 +4,13 @@
 Architecture
 ============
 
-*Coming soon...* all about Abaco architecture.
+spawner makes workers, worker only has one actor, worker spawns the container,
+
+there are some things that go back and forth (through pipelines?); others write to their respective endpoint
+
+Three "front-end"s with endpoints admin,
+
+
 
 from abaco/docs/architecture.rst:
 
