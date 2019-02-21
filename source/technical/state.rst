@@ -4,20 +4,20 @@
 Actor State
 ===========
 
-In this section we describe the state that persists (or not) through Abaco actor container executions.
+In this section we describe the state that can persist through Abaco actor container executions.
 
 State
 -----
 
 When an actor is registered, its ``stateless`` property is automatically set to ``true``. An actor must be registered with ``stateless=false`` to be stateful (maintain state across executions).
 
-Once an actor is executed, the associated worker ``GETs`` data from the ``/actors/v2/{actor_id}/state`` endpoint and injects it into the actor's ``_abaco_actor_state`` environment variable. While an actor is executing, it can update its state by ``POSTing`` to ``/actors/v2/{actor_id}/state``.
+Once an actor is executed, the associated worker ``GETs`` data from the ``/actors/v2/{actor_id}/state`` endpoint and injects it into the actor's ``_abaco_actor_state`` environment variable. While an actor is executing, the actor can update its state by ``POSTing`` to the aforementioned endpoint.
 
 
 Notes
 ~~~~~
 - The worker only ``GETs`` data from the state endpoint one time as the actor is initiated. If the actor updates its state endpoint during execution, the worker does not inject the new state until a new execution.
-- Stateful actors may only have one associated worker in order to avoid race conditions. Thus, generally, stateless actors will execute quicker as they're runnable in parallel.
+- Stateful actors may only have one associated worker in order to avoid race conditions. Thus generally, stateless actors will execute quicker as they can operate in parallel.
 - Issuing a state to a stateless actor will return a ``actor is stateless.`` error.
 - The ``state`` variable must be JSON-serializable. An example of passing JSON-serializable data can be found under `Examples`_ below.
 
@@ -71,7 +71,7 @@ Registering an actor specifying statefulness: ``stateless=false``.
   >>> from agavepy.agave import Agave
   >>> ag = Agave(api_server='https://api.tacc.utexas.edu', token='<access_token>')
   >>> actor = {"image": "abacosamples/test",
-				"stateless": "False"}
+      "stateless": "False"}
   >>> ag.actors.add(body=actor)
 
 POSTing a state to a particular actor; again keep in mind we must pass in JSON serializable data.
@@ -94,7 +94,7 @@ GETting information about a particular actor's state. This function returns a Py
 
 Additional Work
 ---------------
-- Create a pipeline between worker and actor to exchange state without HTTP latency. (Not worker->server->actor)
+- Create a pipeline between worker and actor to exchange state without HTTP latency. (Not worker->server->actor->server)
 - Develop 'stateful' actors that can execute in parallel (utilizing CRDT data-types)
 
 
@@ -103,5 +103,3 @@ Additional Work
 
 
 
-
-:reference:`state`
