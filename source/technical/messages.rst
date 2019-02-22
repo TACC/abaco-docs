@@ -17,6 +17,9 @@ called for, you'll receive the command line logs of your running execution.
 Akin to what you'd see if you and outputted a script to the command line.
 Details on messages, executions, and logs are below.
 
+**Note:** Due to each message being tied to a specific execution, each execution
+will have exactly one message that can be processed.
+
 ----
 
 --------
@@ -32,28 +35,13 @@ Once off the queue, if your specified image has inputs for the messaged data,
 then that messaged data will be visible to your program. Allowing you to set
 custom parameters or inputs for your executions.
 
-Message Properties
-^^^^^^^^^^^^^^^^^^
-
-+---------+----------------------------+
-| Results | Descriptions               |
-+---------+----------------------------+
-| message | Message from abaco         |
-+---------+----------------------------+
-| result  | Some content, shown below. |
-+---------+----------------------------+
-| status  | Don't know                 |
-+---------+----------------------------+
-| version | Don't know                 |
-+---------+----------------------------+
-
-Examples
-^^^^^^^^
+Sending a message
+^^^^^^^^^^^^^^^^^
 
 cURL
 ----
 
-To message an actor with the use of cURL you would do the following:
+To send a message to the ``messages`` endpoint with cURL, you would do the following:
 
 .. code-block:: bash
     
@@ -64,29 +52,174 @@ To message an actor with the use of cURL you would do the following:
 Python
 ------
 
-To message an actor with Agave in Python you would do the following:
+To send a message to the ``messages`` endpoint with ``AgavePy`` and Python, you would do the following:
 
-.. code-block:: bash
-    
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -d "message=<your content here>" \
-    https://api.tacc.utexas.edu/actors/v2/<actor_id>/messages
+.. code-block:: python
+
+    ag.actors.sendMessage(actorId='<actor_id>',
+                          body={'message':'<your content here>'})
 
 Results
 -------
 
-These calls result in a json list similar to the following:
+These calls result in a JSON list similar to the following:
 
 .. code-block:: bash
 
     {'message': 'The request was successful',
      'result': {'_links': {'messages': 'https://api.tacc.utexas.edu/actors/v2/R0y3eYbWmgEwo/messages',
-       'owner': 'https://api.tacc.utexas.edu/profiles/v2/cgarcia',
+       'owner': 'https://api.tacc.utexas.edu/profiles/v2/apitest',
        'self': 'https://api.tacc.utexas.edu/actors/v2/R0y3eYbWmgEwo/executions/00wLaDX53WBAr'},
       'executionId': '00wLaDX53WBAr',
       'msg': '<your content here>'},
      'status': 'success',
      'version': '0.11.0'}
+
+Get message count
+^^^^^^^^^^^^^^^^^
+
+It is possible to retrieve the current number of messages an actor has with the
+``messages`` end point.
+
+cURL
+----
+
+The following retrieves the current number of messages an actor has:
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>/messages
+
+Python
+------
+
+To retrieve the current number of messages with ``AgavePy`` the following is done:
+
+.. code-block:: python
+
+    ag.actors.getMessages(actorId='<actor_id>')
+
+Results
+-------
+
+The result of getting the ``messages`` endpoint should be similar to:
+
+.. code-block:: bash
+
+    {'message': 'The request was successful',
+     'result': {'_links': {'owner': 'https://api.tacc.utexas.edu/profiles/v2/cgarcia',
+       'self': 'https://api.tacc.utexas.edu/actors/v2/R4OR3KzGbRQmW/messages'},
+      'messages': 12},
+     'status': 'success',
+     'version': '0.11.0'}
+
+Binary Messages
+^^^^^^^^^^^^^^^
+
+An additional feature of the Abaco message system is the ability to post binary
+data. This data, unlike raw string data, is sent through a Unix Named Pipe
+(FIFO), stored at /_abaco_binary_data, and can be retrieved from within the
+execution using a FIFO message reading function. The ability to read binary
+data like this allows our end users to do numerous tasks such as reading in
+photos, reading in code to be ran, and much more.
+
+The following is an example of sending a JPEG as a binary message in order to
+be read in by a TensorFlow image classifier and being returned predicted image
+labels. For example, sending a photo of a golden retriever might yield, 80%
+golden retriever, 12% labrador, and 8% clock.
+
+This example uses Python and ``AgavePy`` in order to keep code in one script.
+
+Python with AgavePy
+-------------------
+
+Setting up an ``AgavePy`` object with token and API address information:
+
+.. code-block:: python
+
+    from agavepy.agave import Agave
+    ag = Agave(api_server='https://api.tacc.utexas.edu',
+               username='<username>', password='<password>',
+               client_name='JPEG_classifier',
+               api_key='<api_key>',
+               api_secret='<api_secret>')
+
+    ag.get_access_token()
+    ag = Agave(api_server='https://api.tacc.utexas.edu/', token=ag.token)
+
+Creating actor with the TensorFlow image classifier docker image:
+
+.. code-block:: python
+
+    my_actor = {'image': 'notchristiangarcia/bin_classifier',
+                'name': 'JPEG_classifier',
+                'description': 'Labels a read in binary image'}
+    actor_data = ag.actors.add(body=my_actor)
+
+The following creates a binary message from a JPEG image file:
+
+.. code-block:: python
+    
+    with open('<path to jpeg image here>', 'rb') as file:
+        binary_image = file.read()
+
+Sending binary JPEG file to actor as message with the ``application/octet-stream`` header:
+
+.. code-block:: python
+
+    result = ag.actors.sendMessage(actorId=actor_data['id'],
+                                   body={'binary': binary_image},
+                                   headers={'Content-Type': 'application/octet-stream'})
+
+The following returns information pertaining to the execution:
+
+.. code-block:: python
+
+    execution = ag.actors.getExecution(actorId=actor_data['id'],
+                                       executionId = result['executionId'])
+
+Once the execution has complete, the logs can be called with the following:
+
+.. code-block:: python
+    
+    exec_info = requests.get('{}/actors/v2/{}/executions/{}'.format(url, actor_id, exec_id),
+                             headers={'Authorization': 'Bearer {}'.format(token)})
+
+Sending binary from execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Another useful feature of Abaco is the ability to write to a socket connected 
+to an Abaco endpoint from within an execution. This Unix Domain (Datagram)
+socker is mounted in the actor container at /_abaco_results.sock.
+
+In order to write binary data this socket you can use ``AgavePy`` functions,
+in particular the ``send_bytes_result()`` function that sends bytes as single
+result to the socket. Another useful function is the ``send_python_result()``
+function that allows you to send any Python object that can be pickled with
+``cloudpickle``.
+
+In order to retrieve these results from Abaco you can get the 
+``/actor/<actor_id>/executions/<execution_id>/results`` endpoint. Each get of
+the endpoint will result in exactly one result being popped and retrieved. An
+empty result with be returned if the results queue is empty.
+
+As a socket, the maximum size of a result is 131072 bytes. An execution can
+send multiple results to the socket and said results will be added to a queue.
+It is recommended to to return a reference to a file or object store.
+
+As well, results are sent to the socket and available immediately, an execution
+does not have to complete to pop a result. Results are given an expiry time of
+60 minutes from creation.
+
+cURL
+----
+
+To retrieve a result with cURL you would do the following:
+
+.. code-block:: bash
+    
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>/results
 
 ----
 
@@ -99,13 +232,13 @@ with the inputted data. This execution will be queued waiting for a worker to sp
 or waiting for a worker to be freed. When the execution is initially created it is
 given an execution_id so that you can access information about it using the execution_id endpoint.
 
-Examples
-^^^^^^^^
+Access execution data
+^^^^^^^^^^^^^^^^^^^^^
 
 cURL
 ----
 
-You can access the ``execution_id`` endpoint with cURL with the following:
+You can access the ``execution_id`` endpoint using cURL with the following:
 
 .. code-block:: bash
     
@@ -115,29 +248,28 @@ You can access the ``execution_id`` endpoint with cURL with the following:
 Python
 ------
 
-You can access the ``execution_id`` endpoint with ``AgavePy`` and Python with the following:
+You can access the ``execution_id`` endpoint using ``AgavePy`` and Python with the following:
 
-.. code-block:: bash
-    
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>
+.. code-block:: python
 
+    ag.actors.getExecution(actorId='<actor_id>',
+                           executionId='<execution_id>')    
 
 Results
 -------
 
-These executions will result with something similar to the following:
+Access the ``execution_id`` endpoint will result in something similar to the following:
 
 .. code-block:: bash
     
     {'message': 'Actor execution retrieved successfully.',
-     'result': {'_links': {'logs': 'https://api.tacc.utexas.edu/actors/v2/TACC-PROD_R0y3eYbWmgEwo/executions/00wLaDX53WBAr/logs',
-       'owner': 'https://api.tacc.utexas.edu/profiles/v2/cgarcia',
-       'self': 'https://api.tacc.utexas.edu/actors/v2/TACC-PROD_R0y3eYbWmgEwo/executions/00wLaDX53WBAr'},
+     'result': {'_links': {'logs': 'https://api.tacc.utexas.edu/actors/v2/R0y3eYbWmgEwo/executions/00wLaDX53WBAr/logs',
+       'owner': 'https://api.tacc.utexas.edu/profiles/v2/apitest',
+       'self': 'https://api.tacc.utexas.edu/actors/v2/R0y3eYbWmgEwo/executions/00wLaDX53WBAr'},
       'actorId': 'R0y3eYbWmgEwo',
       'apiServer': 'https://api.tacc.utexas.edu',
       'cpu': 7638363913,
-      'executor': 'cgarcia',
+      'executor': 'apitest',
       'exitCode': 1,
       'finalState': {'Dead': False,
        'Error': '',
@@ -159,6 +291,93 @@ These executions will result with something similar to the following:
       'workerId': 'oQpeybmGRVNyB'},
      'status': 'success',
      'version': '0.11.0'}
+     
+List executions
+^^^^^^^^^^^^^^^
+
+Abaco allows users to retrieve all executions tied to an actor with the
+``executions`` endpoint.
+
+cURL
+----
+
+List executions with cURL by getting the ``executions endpoint``
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions
+
+Python
+------
+
+To list executions with ``AgavePy`` the following is done:
+
+.. code-block:: python
+
+    ag.actors.listExecutions(actorId='<actor_id>')
+
+Results
+-------
+
+Calling the list of executions should result in something similar to:
+
+.. code-block:: bash
+
+    {'message': 'Actor execution retrieved successfully.',
+     'result': {'_links': {'logs': 'https://api.tacc.utexas.edu/actors/v2/R4OR3KzGbRQmW/executions/YqM3RPRoWqz3g/logs',
+       'owner': 'https://api.tacc.utexas.edu/profiles/v2/apitest',
+       'self': 'https://api.tacc.utexas.edu/actors/v2/R4OR3KzGbRQmW/executions/YqM3RPRoWqz3g'},
+      'actorId': 'R4OR3KzGbRQmW',
+      'apiServer': 'https://api.tacc.utexas.edu',
+      'cpu': 0,
+      'executor': 'apitest',
+      'id': 'YqM3RPRoWqz3g',
+      'io': 0,
+      'messageReceivedTime': '2019-02-22 01:01:50.546993',
+      'runtime': 0,
+      'startTime': 'None',
+      'status': 'SUBMITTED'},
+     'status': 'success',
+     'version': '0.11.0'}
+
+Reading message in execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One of the most important parts of using data in an execution is reading said
+data. Retrieving sent data depends on the data type sent.
+
+Python - Reading in raw string data or JSON
+-------------------------------------------
+
+To retrieve JSON or raw data from inside of an execution using Python and 
+``AgavePy``, you would get the message context from within the actor and then
+get it's ``raw_message`` field. 
+
+.. code-block:: python
+	
+	from agavepy.actors import get_context
+
+	context = get_context()
+	message = context['raw_message']
+
+Python - Reading in binary
+--------------------------
+
+Binary data is transmitted to an execution through a FIFO pipe located at
+/_abaco_binary_data. Reading from a pipe is similar to reading from a regular
+file, however ``AgavePy`` comes with an easy to use ``get_binary_message()``
+function to retrieve the binary data.
+
+**Note:** Each Abaco execution processes one message, binary or not. This means
+that reading from the FIFO pipe will result with exactly the entire sent
+message.
+
+.. code-block:: python
+
+	from agavepy.actors import get_binary_message
+
+	bin_message = get_binary_message()
 
 ----
  
@@ -172,233 +391,40 @@ about the log along with the log itself. If the execution is still in the
 submitted phase, then the log will be an empty string, but once the execution
 is in the completed phase the log would contain all outputted command line data.
 
-Examples
-^^^^^^^^
+Retrieving an executions logs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 cURL
 ----
 
-To retrieve the log using cURL, do the following:
+To call the ``log`` endpoint using cURL, do the following:
 
 .. code-block:: bash
 
     $ curl -H "Authorization: Bearer $TOKEN" \
-    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>/logs
 
 Python
 ------
 
-To retrieve the log using cURL, do the following:
+To call the ``log`` endpoint using ``AgavePy`` and Python, do the following:
 
-.. code-block:: bash
+.. code-block:: python
 
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>
+    ag.actors.getExecutionLogs(actorId='<actor_id>',
+                               executionId='<executionId>')
 
 Results
 -------
 
-This request would result in the following returned data:
+This would result in data similar to the following:
 
 .. code-block:: bash
 
     {'message': 'Logs retrieved successfully.',
      'result': {'_links': {'execution': 'https://api.tacc.utexas.edu/actors/v2/qgKRpNKxg0DME/executions/qgmq08wKARlg3',
-       'owner': 'https://api.tacc.utexas.edu/profiles/v2/cgarcia',
+       'owner': 'https://api.tacc.utexas.edu/profiles/v2/apitest',
        'self': 'https://api.tacc.utexas.edu/actors/v2/qgKRpNKxg0DME/executions/qgmq08wKARlg3/logs'},
-      'logs': ''},
+      'logs': '<command line output here>'},
      'status': 'success',
      'version': '0.11.0'}
-
-----
-
---------------------
-Reading data from Code
---------------------
-
-One of the most important parts of using data in an execution is reading said
-data. Retrieving sent data depends on the data sent.
-
-Python - Reading in Raw String Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To get a raw message from inside of a Python using ``Agavepy`` you would get the
-message context from within the actor and then get it's ``raw_message`` field. 
-
-.. code-block:: bash
-	
-	from agavepy.actors import get_context
-
-	context = get_context()
-	message = context['raw_message']
-
-Python - Reading in JSON
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Python - Reading in Binary
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-As binary data transmitted to a execution is streamed in through a FIFO pipe,
-you'll need to read the pipe using the ``AgavePy`` ``get_binary_message()``
-function.
-
-.. code-block:: bash
-
-	from agavepy.actors import get_binary_message
-
-	bin_message = get_binary_message()
-
-----
-
----------------
-Binary Messages
----------------
-
-An additional feature of the Abaco message system is the ability to post binary
-data. This data, unlike a the raw string data is sent through a ... and is got
-from within the execution using a FIFO message reading function. The ability to
-read binary data like this allows our end users to do numerous task, read in
-photos, read in code to be ran, and much more.
-
-The following is an example of sending a jpeg as a binary message in order to
-be read in by a TensorFlow image classifier and being returned possible image
-labels. For example, sending a photo of a golden retriever might yield, 80%
-golden retriever, 12% labrador, and 8% clock.
-
-Example
-^^^^^^^
-
-Python
-------
-
-The following is how to create a binary message from a .jpeg image file
-
-.. code-block:: bash
-
-    with open("<path to jpeg image here>", 'rb') as file:
-        raw_binary_data = file.read()
-
-    message = raw_binary_data
-
-The following example on sending the binary image uses Python's requests library.
-
-.. code-block:: bash
-
-    import requests
-
-    url = "https://api.tacc.utexas.edu"
-    token = <set your api token here>
-
-The following example on sending the binary image uses Python's requests library.
-
-.. code-block:: bash
-
-    actor = requests.post("{}/actors/v2".format(url),
-                          headers={'Authorization':'Bearer {}'.format(token)},
-                          data={'image':'notchristiangarcia/bin_classifier'})
-    actor_id = actor.json()['result']['id']
-
-The following example on sending the binary image uses Python's requests library.
-
-.. code-block:: bash
-
-    bin_exec = requests.post("{}/actors/v2/{}/messages".format(url, actor_id), 
-                             headers={'Authorization': 'Bearer {}'.format(token),
-                                      'Content-Type': 'application/octet-stream'},
-                             data=message)
-    exec_id = bin_exec.json()['result']['executionId']
-
-The following example on sending the binary image uses Python's requests library.
-
-.. code-block:: bash
-
-    exec_info = requests.get("{}/actors/v2/{}/executions/{}".format(url, actor_id, exec_id),
-                             headers={'Authorization': 'Bearer {}'.format(token)})
-
-The following example on sending the binary image uses Python's requests library.
-
-.. code-block:: bash
-    exec_logs = requests.get("{}/actors/v2/{}/executions/{}/logs".format(url, actor_id, exec_id),
-                             headers={'Authorization': 'Bearer {}'.format(token)})
-    exec_logs.json()['result']['logs']
-
-----
-
-----
-Misc
-----
-
-In order to lists all executions for the given actor id you would make a call
-to an actors executions endpoint:
-
-cURL
-^^^^
-
-.. code-block:: bash
-
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    https://api.tacc.utexas.edu/actors/<actor_id>/executions
-
-To get execution information you would GET the executions ID:
-
-cURL
-^^^^
-
-.. code-block:: bash
-
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    https://api.tacc.utexas.edu/actors/<actor_id>/executions/<executionId>
-
-To receive the logs of an execution you would GET the logs endpoint of an execution ID:
-
-cURL
-^^^^
-
-.. code-block:: bash
-
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    https://api.tacc.utexas.edu/actors/<actor_id>/executions/<executionId>/logs
-
-Agave
-^^^^^
-
-.. code-block:: bash
-
-    ag.actors.sendMessage(actorId='O08Nzb3mRA7Bz',
-                          body={'message': 'Actor, please count these words.'})
-
-
-
-
-
-ACTOR STUFF
-
-cURL
-^^^^
-
-.. code-block:: bash
-
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    https://api.tacc.utexas.edu/actors
-
-.. code-block:: bash
-
-    $ curl -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    https://api.tacc.utexas.edu/actors
-
-Creating an actor.
-
-cURL
-^^^^
-
-.. code-blocl:: bash
-
-    curl -H "X-Jwt-Assertion-TEST: $jwt" localhost:8000/actors -d 'image=abacosamples/test' -d 'description="Add your description here"'
-
-    .. attention::
-    While ``agavepy`` works with both Python 2 and 3 we strongly recommend using Python 3.
