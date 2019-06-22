@@ -2,7 +2,7 @@
 .. _messages:
 
 ==============================
-Executions, Messages, and Logs
+Messages, Executions, and Logs
 ==============================
 
 Once you have an Abaco actor created the next logical step is to send this actor
@@ -238,9 +238,9 @@ Synchronous messaging prevents the client from needing to poll the executions en
 completes. By eliminating this polling and returning the response as soon as it is ready, the overall latency
 is minimized.
 
-While synchronous messaging can simply client code and improve performance, it introduces some additional challenges.
+While synchronous messaging can simplify client code and improve performance, it introduces some additional challenges.
 Primarily, if the execution cannot be completed within the HTTP request/response window, the request will time out.
-This window is usually about 30 seconds. Note:
+This window is usually about 30 seconds.
 
 .. Warning::
   Abaco strictly adheres to message ordering and, in particular, synchronous messages do not skip to the front of the

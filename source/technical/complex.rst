@@ -96,13 +96,68 @@ Actor Events and Actor Links
    Support for Actor events and links was added in version 1.2.0.
 
 Abaco provides a facility to automatically send a message to a specified actor whenever certain events occur. This
-mechanism is called an actor `link`: if actor A is registered with a `link` property specifing actor B, then Abaco will
+mechanism is called an actor `link`: if actor A is registered with a `link` property specifying actor B, then Abaco will
 automatically send actor B a message whenever any of the following events occur:
 
   * Actor A's status changes (for example, from SUBMITTED to READY or from READY to ERROR).
   * An execution for actor A completes.
 
+Adding a Link
+~~~~~~~~~~~~~
 
+Registering an actor with a link (or updating an exisitng actor to add a link property) follows the same semantics as
+defined in the :ref:`registration` section; simply add the `link` attribute in the payload. For example, the following
+creates an actor with a link to actor id `6PlMbDLa4zlON`.
+
+.. code-block:: bash
+
+  $ curl -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"image": "abacosamples/test", "name": "test", "link": "6PlMbDLa4zlON", "description": "My test actor using the abacosamples image.", "default_environment":{"key1": "value1", "key2": "value2"} }' \
+  https://api.tacc.utexas.edu/actors/v2
+
+It is also possible to link an actor to an alias: just pass `link=<the_alias>` in the registration payload.
+
+Events and Event Message Format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whenever a supported event occurs, Abaco sends a JSON message to the linked actor with data about the event. The
+included data depends on the event type, as documented below. Note that all the typical context variables, as documented
+in :ref:`context`, will also be injected, excepted where noted below:
+
++---------------------+--------------------------------------------------------------------------+--------------------+
+| Variable Name       | Description                                                              | Event Type         |
++=====================+==========================================================================+====================+
+| actor_id            | The id of the actor.                                                     | all types          |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| tenant_id           | The id of the tenant of the actor.                                       | all types          |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| event_type          | The event type associated with the event. (see table below)              | all types          |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| _abaco_link         | The actor id of the linked actor (the actor receiving the event message  | all types          |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| _abaco_username     | 'Abaco Event'                                                            | all types          |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| status_message      | A message indicating details about the error status.                     | ACTOR_ERROR        |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| execution_id        | The id of the completed execution.                                       | EXECUTION_COMPLETE |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| exit_code           | The exit code of the completed execution.                                | EXECUTION_COMPLETE |
++---------------------+--------------------------------------------------------------------------+--------------------+
+| status              | The final status of the completed execution.                             | EXECUTION_COMPLETE |
++---------------------+--------------------------------------------------------------------------+--------------------+
+
+The following table lists all events by their `event_type` value and a brief description.
+
++---------------------+--------------------------------------------------------------------------+
+| Event type          | Description                                                              |
++=====================+==========================================================================+
+| ACTOR_READY         | The actor is ready to accept messages.                                   |
++---------------------+--------------------------------------------------------------------------+
+| ACTOR_ERROR         | The actor is in error status and requires manual intervention.           |
++---------------------+--------------------------------------------------------------------------+
+| EXECUTION_COMPLETE  | An actor execution has just completed.                                   |
++---------------------+--------------------------------------------------------------------------+
 
 
 

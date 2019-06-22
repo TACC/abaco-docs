@@ -54,7 +54,6 @@ be sure to pass properly formatted JSON in the payload.
 
 .. code-block:: bash
 
-
   $ curl -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"image": "abacosamples/test", "name": "test", "description": "My test actor using the abacosamples image.", "default_environment":{"key1": "value1", "key2": "value2"} }' \
