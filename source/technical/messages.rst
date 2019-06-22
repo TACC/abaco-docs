@@ -219,9 +219,55 @@ To retrieve a result with cURL you would do the following:
 .. code-block:: bash
     
     $ curl -H "Authorization: Bearer $TOKEN" \
+    -d "message=<your content here>" \
     https://api.tacc.utexas.edu/actors/v2/<actor_id>/executions/<execution_id>/results
 
 ----
+
+Synchronous Messaging
+^^^^^^^^^^^^^^^^^^^^^
+
+.. Important::
+   Support for Synchronous Messaging was added in version 1.1.0.
+
+Starting with `1.1.0`, Abaco provides support for sending a synchronous message to an actor; that is, the client
+sends the actor a message and the request blocks until the execution completes. The result of the execution is returned
+as an HTTP response to the original message request.
+
+Synchronous messaging prevents the client from needing to poll the executions endpoint to determine when an execution
+completes. By eliminating this polling and returning the response as soon as it is ready, the overall latency
+is minimized.
+
+While synchronous messaging can simply client code and improve performance, it introduces some additional challenges.
+Primarily, if the execution cannot be completed within the HTTP request/response window, the request will time out.
+This window is usually about 30 seconds. Note:
+
+.. Warning::
+  Abaco strictly adheres to message ordering and, in particular, synchronous messages do not skip to the front of the
+  actor's message queue. Therefore, a synchronous message *and all queued messages* must be processed within the HTTP
+  timeout window. To avoid excessive synchronous message requests, Abaco will return a 400 level request if the actor
+  already has more than 3 queued messages at the time of the synchronous message request.
+
+To send a synchronous message, the client appends `_abaco_synchronous=true` query parameter to the request; the rest of
+the messaging semantics follows the rules and conventions of asynchronous messages.
+
+cURL
+----
+
+The following example uses the curl command line client to send a synchronous message:
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    -d "message=<your content here>" \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>/messages?_abaco_synchronous=true
+
+As stated above, the request blocks until the execution (and all previous executions queued for the actor) completes.
+To make the response to a synchronous message request, Abaco uses the following rules:
+
+  1. If a (binary) result is registered by the actor for the execution, that result is returned with along with a content-type `application/octet-stream`.
+  2. If no result is available when the execution completes, the logs associated with the execution are returned with content-type `text/html` (charset utf8 is assumed).
+
 
 ----------
 Executions

@@ -6,7 +6,6 @@ API Reference
 
 The following table lists the public endpoints within the Abaco API.
 
-
 +-----+------+-----+--------+-----------------------------------------------+---------------------------------+
 | GET | POST | PUT | DELETE | Endpoint                                      |  Description                    |
 +=====+======+=====+========+===============================================+=================================+
@@ -33,6 +32,8 @@ The following table lists the public endpoints within the Abaco API.
 |  X  |  X   |     |        | /actors/v2/{actor_id}/permissions             | List/update actor permissions.  |
 +-----+------+-----+--------+-----------------------------------------------+---------------------------------+
 |  X  |      |     |        | /actors/v2/{actor_id}/executions              | Retrieve execution details.     |
++-----+------+-----+--------+-----------------------------------------------+---------------------------------+
+|     |      |     |   X    | /actors/v2/{actor_id}/executions/{eid}        | Halt running execution.         |
 +-----+------+-----+--------+-----------------------------------------------+---------------------------------+
 |  X  |      |     |        | /actors/v2/{actor_id}/executions/{eid}/logs   | Retrieve execution logs.        |
 +-----+------+-----+--------+-----------------------------------------------+---------------------------------+
