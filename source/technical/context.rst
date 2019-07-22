@@ -13,25 +13,33 @@ When an actor container is launched, Abaco injects information about the executi
 variables. This information is collectively referred to as the ``context``. The following table provides a complete
 list of variable names and their description:
 
-+---------------------+--------------------------------------------------------------------------+
-| Variable Name       | Description                                                              |
-+=====================+==========================================================================+
-| _abaco_execution_id | The id of the current execution.                                         |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_access_token | An OAuth2 access token representing the user who registered the actor.   |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_actor_dbid   | The internal id of the actor.                                            |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_actor_state  | The value of the actor's state at the start of the execution.            |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_Content-Type | The data type of the message (either 'str' or 'application/json').       |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_username     | The username of the "executor", i.e., the user who sent the message.     |
-+---------------------+--------------------------------------------------------------------------+
-| _abaco_api_server   | The base URL for the Abaco API service.                                  |
-+---------------------+--------------------------------------------------------------------------+
-|  MSG                | The message sent to the actor, as a raw string.                          |
-+---------------------+--------------------------------------------------------------------------+
++----------------------+-------------------------------------------------------------------------+
+| Variable Name        | Description                                                             |
++======================+=========================================================================+
+| _abaco_actor_id      | The id of the actor.                                                    |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_actor_dbid    | The Abaco internal id of the actor.                                     |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_container_repo| The Docker image used to launch this actor container.                   |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_worker_id     | The id of the worker for the actor overseeing this execution.           |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_execution_id  | The id of the current execution.                                        |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_access_token  | An OAuth2 access token representing the user who registered the actor.  |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_api_server    | The OAuth2 API server associated with the actor.                        |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_actor_state   | The value of the actor's state at the start of the execution.           |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_Content-Type  | The data type of the message (either 'str' or 'application/json').      |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_username      | The username of the "executor", i.e., the user who sent the message.    |
++----------------------+-------------------------------------------------------------------------+
+| _abaco_api_server    | The base URL for the Abaco API service.                                 |
++----------------------+-------------------------------------------------------------------------+
+|  MSG                 | The message sent to the actor, as a raw string.                         |
++----------------------+-------------------------------------------------------------------------+
 
 
 Notes
