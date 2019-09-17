@@ -24,6 +24,7 @@ Welcome to Abaco's Documentation!
    technical/state
    technical/sharing
    technical/complex
+   technical/autoscaling
    technical/api_reference
 
 

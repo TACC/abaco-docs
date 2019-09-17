@@ -32,6 +32,10 @@ their descriptions.
 |                     | the Docker daemon. *Note*: Setting this parameter to True requires elevated      |
 |                     | permissions.                                                                     |
 +---------------------+----------------------------------------------------------------------------------+
+| hints               | A list of strings representing user-defined "tags" or metadata about the actor.  |
+|                     | "Official" Abaco hints can be applied to control configurable aspects of the     |
+|                     | actor runtime, such as the autoscaling algorithm used. (see :ref:`autoscaling`). |
++---------------------+----------------------------------------------------------------------------------+
 | use_container_uid   | Run the actor using the UID/GID set in the Docker image. *Note*: Setting         |
 |                     | this parameter to True requires elevated permissions.                            |
 +---------------------+----------------------------------------------------------------------------------+
