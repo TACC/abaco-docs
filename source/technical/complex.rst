@@ -18,7 +18,7 @@ maps a name to an actor id, and Abaco will replace a reference to an alias in an
 the alias at the time. Aliases are useful for insulating an actor from changes to another actor to which it will
 send messages.
 
-For example, if actor A sends a message to actor B, the user can create an alias for actor B and configure A to send
+For example, if actor A sends messages to actor B, the user can create an alias for actor B and configure A to send
 messages to that alias. In the future, if changes need to be made to actor B or if messages from actor A need to be
 routed to a different actor, the alias value can be updated without any code changes needed on the part of actor A.
 
@@ -72,6 +72,12 @@ Nonces Attached to Aliases
 
 .. Important::
    Support for Nonces attached to aliases was added in version 1.1.0.
+
+
+.. Important::
+   The nonces attached to aliases feature was updated in version 1.5.0, so that 1) ``UPDATE`` permission on the
+   underlying actor id is required and 2) It is no longer possible to create an alias nonce for permission level ``UPDATE``.
+
 
 Nonces can be created for aliases in much the same way as creating nonces for a specific actor id - instead of using
 the ``/nonces`` endpoint associated with the actor id, use the ``/nonces`` endpoint associated with the alias instead. The
