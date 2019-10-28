@@ -7,7 +7,8 @@ Getting Started
 
 This Getting Started guide will walk you through the initial steps of setting up the necessary accounts and installing
 the required software before moving to the Abaco Quickstart, where you will create and execute your first Abaco actor. If
-you are already using Docker Hub and the TACC Cloud APIs, feel free to jump right to the `Abaco Quickstart`_.
+you are already using Docker Hub and the TACC Cloud APIs, feel free to jump right to the `Abaco Quickstart`_ or check
+out the Abaco Live Docs `site <https://tacc.github.io/abaco-live-docs/>`_.
 
 
 .. contents:: :local:
