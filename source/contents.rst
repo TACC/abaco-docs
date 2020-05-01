@@ -21,6 +21,7 @@ Welcome to Abaco's Documentation!
    technical/registration
    technical/context
    technical/messages
+   technical/search
    technical/state
    technical/sharing
    technical/complex
