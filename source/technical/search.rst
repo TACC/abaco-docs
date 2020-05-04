@@ -1,30 +1,49 @@
 .. _search:
 
-===============
-Database Search
-===============
-With the introduction of Abaco 1.6.0 database searching has been introduced using
+======
+Search
+======
+With the release of Abaco 1.6.0, a search capability has been introduced using
 the Mongo aggregation system, full-text searching, and indexing. Searching can be
-done on actor, worker, execution, and log information. This feature allows for users
-to search based on any information across all objects that they have permission
-to view. For example, search would allow checking of all viewable executions for
-ERRORS in one easy call. The search currently makes use of logical operators and
+done on actor, worker, execution, and log collections. This feature allows users
+to search based on any attribute associated with resources that they have permission
+to view. For example, search would allow retrieval of all viewable executions with status
+"ERROR" in one API call. The search currently makes use of logical operators and
 datetime to allow for easy searching of any object based on any specific field.
 
 .. attention::
     Search in Abaco was implemented in version 1.6.0.
 
-Search is available on the actors, workers, executions, and logs databases. Search
-has been implemented on a new ``{base}/actors/search/{database}`` endpoint alongside being
-implemented on the ``{base}/actors``, ``{base}/actors/{actor_id}/workers``,
-``{base}/actors/{actor_id}/executions``, and
-``{base}/actors/{actor_id}/executions/{execution_id}/logs``endpoints.
+Search has been implemented via query parameters on a new ``/search`` endpoint and has the following general form:
 
-To use search on the ``{base}/actors/search/{database}`` endpoint the database to be searched
-must be specified as either ``actors``, ``workers``, ``executions``, or ``logs`` in the URL.
-With no query arguments Abaco will return all entries in the database that you have
-permission to view. To specify query arguments the user can add a ``?`` to the end of
-their url and specify the parameters they are looking to implement.
+.. code-block:: bash
+
+  GET /actors/v2/search/{collection}?<attr_1>.<op_1>=<value_1>&<attr_2>.<op_2>=<value_2>&...
+
+where ``<attr_1>``, ``<attr_2>``, etc. are valid attributes on an instance of ``<collection>``.
+
+The same query parameters can also be used on the following existing endpoints:
+
++-------------------------------------+-------------------------------------------+
+| Endpoint                            | Description                               |                                                                                         | Examples                                |
++=====================================+===========================================+
+| /actors                             | Search all actors, same as /search/actors |
++-------------------------------------+-------------------------------------------+
+| /actors/{aid}/executions            | Search all executions for a fixed actor.  |
++-------------------------------------+-------------------------------------------+
+| /actors/{aid}/executions/{eid}/logs | Search logs for a specific execution.     |
++-------------------------------------+-------------------------------------------+
+| /actors/{aid}/workers               | Search all workers for a fixed actor.     |
++-------------------------------------+-------------------------------------------+
+
+When applied to one of the existing endpoints above, the query parameters can be thought of as filters,
+refining the set of objects that would have been returned by the listing.
+
+To use search on the ``/actors/search/{collection}`` endpoint, specify the collection to be searched
+(``actors``, ``workers``, ``executions``, or ``logs``) in the URL.
+With no query arguments Abaco will return all entries in the collection that you have
+permission to view. To specify query arguments, add a ``?`` to the end of the url and specify the parameters
+in form ``<param_name>=<param_value>`` separated by ``&``.
 
 A table of search parameters, their function, and examples are below.
 
@@ -190,7 +209,7 @@ Searching
 
 Like mentioned above, a search may contain as many parameters as a user wants sans for
 ``limit`` and ``skip``, where each may only be used once. Search on the new
-``{base}/actors/search/{database}`` always takes place and when given no parameters returns
+``{base}/actors/search/{collection}`` always takes place and when given no parameters returns
 any information the user has access to. To activate on search on the other endpoints, at
 least one query parameter must be declared.
 
