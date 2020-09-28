@@ -54,6 +54,13 @@ available to all users and their descriptions.
 | webhook             | URL to publish this actor's events to.                                           |
 |                     | (see :ref:`complex`).                                                            |
 +---------------------+----------------------------------------------------------------------------------+
+| log_ex              | Configure the amount of time that your logs will exist, in minutes.              |
++---------------------+----------------------------------------------------------------------------------+
+| cron_schedule       | Create a schedule to automatically execute your actor (see :ref:`messages`).     |
++---------------------+----------------------------------------------------------------------------------+
+| cron_on             | A switch to turn your cron schedule on or off                                    |
++---------------------+----------------------------------------------------------------------------------+
+
 
 Notes
 -----

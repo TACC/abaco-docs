@@ -425,6 +425,71 @@ message.
 
 	bin_message = get_binary_message()
 
+Cron Schedule
+^^^^^^^^^^^^^^^
+The cron schedule is a tool to automatically execute your actor based on a schedule. 
+Each actor has two user-defined parameters associated with the cron execution: 
+``cron_schedule`` and ``cron_on``. The scheduler has another variable, ``cron_next_ex``,
+which holds the next execution time of the actor. This is an internal variable 
+and cannot be edited by users. 
+To create a schedule, you would call 
+the ``cron_schedule`` parameter with a string
+in the following format: 
+
+'yyyy-mm-dd hh + <number> <unit of time>' 
+
+where the first part is the datetime when the first execution will happen, and the 
+second part is the time increment for each subsequent execution. 
+
+.. Note::
+  The highest granularity is the hour, and the units of time that can be used are hour, day, week, and month.
+
+To create an actor with a schedule, call:
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"image": "abacosamples/test", "cron_schedule": "2020-09-28 16 + 1 hour"}' \
+    https://api.tacc.utexas.edu/actors/v2
+
+To update the schedule:
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    -X PUT \
+    -d '{"cron_schedule": "2020-12-11 16 + 3 days"}' \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>
+
+This will add a cron schedule to the actor with id <actor_id>. The actor is scheduled to 
+automatically execute on December 11th, 2020 at 4 pm, UTC timezone. 
+That actor will be executed again 3 days later on the 14th, 
+at 4pm, and then 3 days after that, again at 4pm. This execution will 
+recur every 3 days until the user changes the cron schedule,
+turns off the cron schedule, or deletes the actor.
+
+.. Note::
+  The cron schedule runs on the UTC timezone. 
+
+To turn off the schedule, use the cron switch like so:
+
+.. code-block:: bash
+
+    $ curl -H "Authorization: Bearer $TOKEN" \
+    -X PUT \
+    -d '{"cron_on": "False"}' \
+    https://api.tacc.utexas.edu/actors/v2/<actor_id>
+
+
+By turning off the schedule, the actor will no longer execute itself at each increment. 
+You can turn it on again at any time, and the actor will 
+resume incrementing as before. For example, if an actor is set to 
+execute every hour, and then the cron switch is turned off, the actor will
+stop executing itself. After a week, the  switch can be turned back on, and the 
+actor will resume executing on the hour. 
+
+
 ----
  
 ----
