@@ -439,7 +439,13 @@ in the following format:
 'yyyy-mm-dd hh + <number> <unit of time>' 
 
 where the first part is the datetime when the first execution will happen, and the 
-second part is the time increment for each subsequent execution. 
+second part is the time increment for each subsequent execution. Cron also has an alias
+called ``now``, which lets you deploy the actor at the current UTC time. For example, 
+if you created this schedule 
+
+'now + 1 hour'
+
+the actor would execute at the current time, and then again during the next hour. 
 
 .. Note::
   The highest granularity is the hour, and the units of time that can be used are hour, day, week, and month.
@@ -489,6 +495,13 @@ execute every hour, and then the cron switch is turned off, the actor will
 stop executing itself. After a week, the  switch can be turned back on, and the 
 actor will resume executing on the hour. 
 
+Cron - Error Messages
+----------------------
+If users do not follow the correct cron format, they will receive an error
+letting them know to check the format. The API also checks that the schedule
+sent in has not already past. For example, if you pass in the year 1955, you 
+will get an error message saying the cron schedule has already passed. The error 
+message will also tell you the current UTC time for reference. 
 
 ----
  
