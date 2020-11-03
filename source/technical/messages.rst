@@ -427,48 +427,61 @@ message.
 
 Cron Schedule
 ^^^^^^^^^^^^^^^
-The cron schedule is a tool to automatically execute your actor based on a schedule. 
+
+.. Note::
+  The Abaco Cron Schedule feature was implemented in version 1.7.0.
+
+Abaco's cron schedule is a tool to automatically execute your actor based on a schedule.
 Each actor has two user-defined parameters associated with the cron execution: 
-``cron_schedule`` and ``cron_on``. The scheduler has another variable, ``cron_next_ex``,
+``cronSchedule`` and ``cronOn``. The scheduler has another variable, ``cronNextEx``,
 which holds the next execution time of the actor. This is an internal variable 
 and cannot be edited by users. 
-To create a schedule, you would call 
-the ``cron_schedule`` parameter with a string
-in the following format: 
+To create a schedule, set the ``cronSchedule`` parameter when registering a new actor or updating an
+existing actor.
+The value of ``cronSchedule`` should be a string in the following format:
 
-'yyyy-mm-dd hh + <number> <unit of time>' 
+.. code-block:: bash
+
+  yyyy-mm-dd hh + <number> <unit of time>
 
 where the first part is the datetime when the first execution will happen, and the 
-second part is the time increment for each subsequent execution. Cron also has an alias
-called ``now``, which lets you deploy the actor at the current UTC time. For example, 
-if you created this schedule 
+second part is the time increment for each subsequent execution. Note that the spaces,
+plus characters (``+``) and dash characters (``-``) in the template above are meaningful and
+are a required part of
+the format. Abaco's cron schedule also has an alias
+called ``now``, which lets you execute the actor at the current UTC time. For example,
+if an actor was registered with this schedule
 
-'now + 1 hour'
+.. code-block:: bash
 
-the actor would execute at the current time, and then again during the next hour. 
+  "cronSchedule": "now + 1 hour"
+
+the actor would execute at the current time, and then again at the top of the hour every hour.
 
 .. Note::
   The highest granularity is the hour, and the units of time that can be used are hour, day, week, and month.
 
-To create an actor with a schedule, call:
+To create an actor with a schedule, make a request like the following:
 
 .. code-block:: bash
 
     $ curl -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"image": "abacosamples/test", "cron_schedule": "2020-09-28 16 + 1 hour"}' \
+    -d '{"image": "abacosamples/test", "cronSchedule": "2020-09-28 16 + 1 hour"}' \
     https://api.tacc.utexas.edu/actors/v2
 
-To update the schedule:
+To update the schedule, make a request like the following:
 
 .. code-block:: bash
 
     $ curl -H "Authorization: Bearer $TOKEN" \
     -X PUT \
-    -d '{"cron_schedule": "2020-12-11 16 + 3 days"}' \
+    -H "Content-Type: application/json" \
+    -d '{"image": "abacosamples/test", "cronSchedule": "2020-12-11 16 + 3 days"}' \
     https://api.tacc.utexas.edu/actors/v2/<actor_id>
 
-This will add a cron schedule to the actor with id <actor_id>. The actor is scheduled to 
+This last request above will update the cron schedule for the actor with id ``<actor_id>`` as
+follows: the actor will be scheduled to
 automatically execute on December 11th, 2020 at 4 pm, UTC timezone. 
 That actor will be executed again 3 days later on the 14th, 
 at 4pm, and then 3 days after that, again at 4pm. This execution will 
@@ -478,13 +491,19 @@ turns off the cron schedule, or deletes the actor.
 .. Note::
   The cron schedule runs on the UTC timezone. 
 
-To turn off the schedule, use the cron switch like so:
+.. Note::
+  When making requests to set the cronSchedule, be sure to pass "application/json" content to avoid
+  issues requiring escaping characters inside the schedule value.
+
+
+To turn off the schedule, use the `cronOn` switch like so:
 
 .. code-block:: bash
 
     $ curl -H "Authorization: Bearer $TOKEN" \
     -X PUT \
-    -d '{"cron_on": "False"}' \
+    -H "Content-Type: application/json" \
+    -d '{"image": "abacosamples/test", "cronOn": "False"}' \
     https://api.tacc.utexas.edu/actors/v2/<actor_id>
 
 
@@ -492,16 +511,33 @@ By turning off the schedule, the actor will no longer execute itself at each inc
 You can turn it on again at any time, and the actor will 
 resume incrementing as before. For example, if an actor is set to 
 execute every hour, and then the cron switch is turned off, the actor will
-stop executing itself. After a week, the  switch can be turned back on, and the 
+stop executing itself. After a week, the switch can be turned back on, and the
 actor will resume executing on the hour. 
 
-Cron - Error Messages
-----------------------
-If users do not follow the correct cron format, they will receive an error
+Cron Schedule - Error Messages
+------------------------------
+If users supply a value for `cronSchedule` in an incorrect format, they will receive an error
 letting them know to check the format. The API also checks that the schedule
 sent in has not already past. For example, if you pass in the year 1955, you 
 will get an error message saying the cron schedule has already passed. The error 
 message will also tell you the current UTC time for reference. 
+
+Cron Message and Execution
+--------------------------
+When it is time to execute an actor configured with a ``cronSchedule``, Abaco's internal cron agent
+simply queues a message on the actor's internal message queue, just as if a client had sent a message
+to the actor using the ``/messages`` API. If the actor already has (unprocessed) messages in its queue,
+these messages will be processed first before the cron message. This means that there could be some delay
+between the time Abaco internally queues the message and the actor starts executing it.
+
+Currently, the cron message sent to the actor is the static string
+
+.. code-block:: bash
+
+  This is your cron execution
+
+Accordingly, the ``_abaco_Content_Type`` context variable is set to ``str``. The rest of the context
+variables are set normally, as described in :ref:`context`.
 
 ----
  

@@ -32,7 +32,7 @@ list of variable names and their description:
 +----------------------+-------------------------------------------------------------------------+
 | _abaco_actor_state   | The value of the actor's state at the start of the execution.           |
 +----------------------+-------------------------------------------------------------------------+
-| _abaco_Content-Type  | The data type of the message (either 'str' or 'application/json').      |
+| _abaco_Content_Type  | The data type of the message (either 'str' or 'application/json').      |
 +----------------------+-------------------------------------------------------------------------+
 | _abaco_username      | The username of the "executor", i.e., the user who sent the message.    |
 +----------------------+-------------------------------------------------------------------------+
