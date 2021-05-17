@@ -223,6 +223,151 @@ may be added in subsequent releases.
 +---------------------+--------------------------------------------------------------------------+
 
 
+Actor Configs
+-------------
+.. Important::
+   Support for Actor configs was added in version 1.9.0.
+
+The actor configs feature allows users to manage a set of conigurations shared by multiple actors all in one place.
+Configs can include both standard configuration as well as "secrets" such as database passwords and API keys. With
+actor config secrets, Abaco encrypts the config data before saving it in its database.
+
+Actor configs are managed via new endpoint, ``/actors/v2/configs``. Each config object has the following properties:
+
+  * ``name`` - The name of the config. This attribute must be unique within the tenant.
+  * ``value`` - The content of the config to be shared with actors. The value must be JSON-serializable.
+  * ``actors`` - A comma-separated string of actors to share the config data with. The list can include both actor
+    id's and aliases. The user creating the config must have UPDATE access to all actors in the list, as sharing a
+    config with an actor is equivalent to updating the actor's default environment.
+  * ``isSecret`` (True/False) - Whether the config data should be considered security sensitive. If true, Abaco will
+    encrypt the config data (i.e., the contents of ``value``) in the database and decrypt it right before injecting it
+    into the actor container. Additionally, when retrieving the config object using Abaco's REST API, Abaco will
+    display the encrypted version of the secret data.
+
+Creating Actor Configs
+~~~~~~~~~~~~~~~~~~~~~~
+Here is an example of creating a simple config using curl:
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs \
+  -H "content-type: application/json" \
+  -d '{"name": "config_name", "value": "123", "actors": "JBExVooD31rko", "is_secret": false }'
+
+.. warning::
+
+  When creating actor configs be sure to use content type ``application/json``. Using url-encoded forms will lead
+  to issues.
+
+In this example, we have shared the config with exactly one actor -- the one with id ``JBExVooD31rko``. We can list or
+update the config using its name; for example:
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs/config_name \
+
+  "message": "Config retrieved successfully.",
+  "result": {
+    "actors": "JBExVooD31rko",
+    "is_secret": false,
+    "name": "config_name",
+    "value": "123"
+  },
+  "status": "success",
+  "version": "1.9.0"
+
+Now, whenever we send actor ``JBExVooD31rko`` a message, Abaco will inject a special environment variable,
+``_actor_configs``, into the container, and the value of the variable will be a JSON-serializable representation of all
+configs that have been shared with the actor. To be precise, the ``_actor_configs`` variable will be a JSON object with
+a key for each such config equal to the config's ``name`` and value equal to the config's ``value``.
+
+For example, assuming this is the only config shared with this actor, the actor container would have an environment
+variable ``_actor_configs`` with value:
+
+.. code-block:: bash
+
+  _actor_configs={'config_name': '123'}
+
+We can put any JSON-serializable content for the ``value`` of the config. For example, we could create and share a
+second, more complicated config with the same actor as follows:
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs \
+  -H "content-type: application/json" \
+  -d '{"name": "config2", "value": {"key": "some_key", "int_key": 12345, "a list key": ["a",4, 3.14159]}, "actors": "JBExVooD31rko", "is_secret": false }'
+
+Now when we send a message to actor ``JBExVooD31rko`` the ``_actor_configs`` variable will have contents
+
+.. code-block:: bash
+
+  _actor_configs={'config_name': '123', 'config2': "{'key': 'some_key', 'int_key': 12345, 'a list key': ['a', 4, 3.14159]}"}
+
+Updating Actor Configs
+~~~~~~~~~~~~~~~~~~~~~~
+Updating an actor config is done by making a PUT request to the ``/actors/v2/configs/<config_name>`` endpoint. A complete
+description of the config should be given in the PUT body. For example, to add a new actor to the list of actors that
+our simple config from above is shared with, we would make a PUT request like so:
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs/config_name \
+  -X PUT \
+  -H "content-type: application/json" \
+  -d '{"name": "config_name", "value": "123", "actors": "JBExVooD31rko, mr_fixer", "is_secret": false }'
+
+Note that in the above example we have shared the config with both an actor id (``JBExVooD31rko``) and an
+alias (``mr_fixer``) which is perfectly allowable.
+
+.. note::
+
+  Updating the ``value`` of an actor config takes effect immediately in the sense that any new actor execution will
+  start to use the new value as soon as the PUT request is processed. Thus, actor configs provide a way to update the
+  configuration for a set of actors simultaneously, with one API request, instead of updating/redeploying individual
+  actors one at a time.
 
 
+Actor Config Permissions
+~~~~~~~~~~~~~~~~~~~~~~~~
+It is important to keep in mind that actor config objects have *their own* permissions, separate from the permissions
+associated with the actors a config may be shared with. To see and manage the permissions associated with a config,
+use the ``/actors/v2/configs/<config_name>/permissions`` endpoint. For example,
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs/config_name/permissions \
+
+    {
+      "message": "Permissions retrieved successfully.",
+      "result": {
+        "testuser": "UPDATE"
+      },
+      "status": "success",
+      "version": "1.9.0"
+    }
+
+A user must have explicit access to a config object to read or update it. When a config is first created, only the owner
+has access. We can give access to another user by making a POST request to the permissions endpoint, like so:
+
+.. code-block:: bash
+
+  curl -H "Authorization: Bearer $TOKEN" \
+  https://api.tacc.utexas.edu/actors/v2/configs/config_name/permissions \
+  -H "content-type: application/json" \
+  -d '{"user": "testotheruser", "level": "UPDATE"}
+
+    {
+      "message": "Permission added successfully.",
+      "result": {
+        "testotheruser": "UPDATE",
+        "testuser": "UPDATE"
+      },
+      "status": "success",
+      "version": "1.9.0"
+    }
 
